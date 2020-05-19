@@ -489,7 +489,7 @@ class _YeelightDeviceState extends State<YeelightDevices> {
                             Widget sliderBrightness = Container(
                                 padding: EdgeInsets.all(18),
                                 child: Slider(
-                                    min: 0,
+                                    min: 1,
                                     max: 100,
                                     label: 'Brightness',
                                     value: brightness.toDouble(),
