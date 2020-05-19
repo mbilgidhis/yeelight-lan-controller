@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:yeedart/yeedart.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:pull_to_refresh/pull_to_refresh.dart';
 
 void main() => runApp(MyApp());
 
@@ -25,6 +26,7 @@ class YeelightDevices extends StatefulWidget {
 }
 
 class _YeelightDeviceState extends State<YeelightDevices> {
+    RefreshController _refreshController = RefreshController(initialRefresh: false);
     var devices = new List();
     final _biggerFont = const TextStyle(fontSize: 22.0);
     bool _lampState = false;
@@ -33,11 +35,15 @@ class _YeelightDeviceState extends State<YeelightDevices> {
     int brightness = 0;
     int colorTemperature = 1700;
     
-    _getDevices() {
+    _getDevices() async {
+        devices.clear();
         Discover._discover().then((responses){
             setState(() {
                 devices = responses;
             });
+            if( responses.isEmpty ) {
+                showToast('No devices found.');
+            }
         }).catchError((onError){
             showToast('Failed to discover devices.');
         });
@@ -68,12 +74,17 @@ class _YeelightDeviceState extends State<YeelightDevices> {
                     IconButton(
                         icon: Icon(Icons.refresh),
                         onPressed: () => setState(() {
-                          _pushRefresh();
+                          _onRefresh();
                         }),
                     )
                 ]
             ),
-            body: Center(
+            body: SmartRefresher(
+                enablePullDown: true,
+                enablePullUp: false,
+                controller: _refreshController,
+                onRefresh: _onRefresh,
+                header: MaterialClassicHeader(),
                 child: ListView.builder(
                     padding: const EdgeInsets.all(10.0),
                     itemCount: devices.length,
@@ -96,13 +107,13 @@ class _YeelightDeviceState extends State<YeelightDevices> {
                         );
                     }
                 ),
-            )
+            ),
         );
     }
     
-    _pushRefresh() {
-        devices.clear();
-        _getDevices();
+    Future<void> _onRefresh() async{
+        await _getDevices();
+        _refreshController.refreshCompleted();
     }
 
     int _changeToInt(Color color) {
@@ -128,7 +139,7 @@ class _YeelightDeviceState extends State<YeelightDevices> {
                     return StatefulBuilder(
                         builder: (BuildContext context, StateSetter setState) {
                             // Always scan for devices;
-                            _pushRefresh();
+                            _onRefresh();
                             final _styleHead = TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
@@ -141,9 +152,7 @@ class _YeelightDeviceState extends State<YeelightDevices> {
                             deviceModel = dev.model;
     
                             Future<Null> _onOffPres() async {
-                                // Always scan for devices
-                                _pushRefresh();
-        
+                                _onRefresh();
                                 final device = Device(
                                     address: dev.address,
                                     port: dev.port,
@@ -157,8 +166,7 @@ class _YeelightDeviceState extends State<YeelightDevices> {
 
                                 if ( await _devState.result[0] == 'on' ) {
                                     await device.turnOff(
-                                            duration: Duration(
-                                            milliseconds: 1000),
+                                            duration: Duration(milliseconds: 1000),
                                             effect: Effect.smooth()
                                         )
                                         .catchError((onError){
@@ -212,6 +220,7 @@ class _YeelightDeviceState extends State<YeelightDevices> {
                             }
                             
                             Future<Null> changeBrightness(double value) async {
+//                                _onRefresh();
                                 final device = Device(
                                     address: dev.address,
                                     port: dev.port,
@@ -239,6 +248,7 @@ class _YeelightDeviceState extends State<YeelightDevices> {
                             }
 
                             Future<Null> changeColorTemperature(double value) async {
+//                                _onRefresh();
                                 final device = Device(
                                     address: dev.address,
                                     port: dev.port,
@@ -487,7 +497,7 @@ class _YeelightDeviceState extends State<YeelightDevices> {
                             Widget _emptyContainer = Container();
                             
                             Widget sliderBrightness = Container(
-                                padding: EdgeInsets.all(18),
+                                padding: EdgeInsets.only(bottom: 10, top: 5, left: 18, right: 18),
                                 child: Slider(
                                     min: 1,
                                     max: 100,
@@ -503,7 +513,7 @@ class _YeelightDeviceState extends State<YeelightDevices> {
                             );
 
                             Widget sliderColorTemperature = Container(
-                                padding: EdgeInsets.all(18),
+                                padding: EdgeInsets.only(bottom: 10, top: 5, left: 18, right: 18),
                                 child: Slider(
                                     min: 1700,
                                     max: 6500,
@@ -518,6 +528,18 @@ class _YeelightDeviceState extends State<YeelightDevices> {
                                     onChangeEnd: changeColorTemperature,
                                 ),
                             );
+                            
+                            Widget buildTextContainer(String label) {
+                                return Container(
+                                    padding: EdgeInsets.only(bottom: 10, top: 10, left: 18, right: 18),
+                                    child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                        children: [
+                                            Text(label, style: _styleHead),
+                                        ],
+                                    ),
+                                );
+                            }
     
                             return Scaffold (
                                 appBar: AppBar(
@@ -528,8 +550,10 @@ class _YeelightDeviceState extends State<YeelightDevices> {
                                         containerTable,
                                         buttonOnOff,
                                         (deviceModel != 'mono') ? _colorPicker : _emptyContainer,
+                                        buildTextContainer('Set Brightness'),
                                         sliderBrightness,
-                                        sliderColorTemperature,
+                                        (deviceModel != 'mono') ? buildTextContainer('Set Color Temperature') : _emptyContainer,
+                                        (deviceModel != 'mono') ? sliderColorTemperature : _emptyContainer,
                                     ],
                                 )
                             );
@@ -544,7 +568,7 @@ class _YeelightDeviceState extends State<YeelightDevices> {
 class Discover {
     static Future<List> _discover() async {
         final responses = await Yeelight.discover();
-//        print( await responses );
+        print( await responses );
         return responses;
     }
 }

@@ -31,6 +31,7 @@ dependencies:
   yeedart: ^0.2.0
   flutter_colorpicker: ^0.3.4
   fluttertoast: ^4.0.0
+  pull_to_refresh: ^1.5.8
 
 dev_dependencies:
   flutter_test:
