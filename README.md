@@ -1,6 +1,6 @@
 # yeelight
 
-A new Flutter project.
+LAN Controller for Yeelight
 
 ## Getting Started
 
