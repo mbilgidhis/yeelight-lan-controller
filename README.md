@@ -1,16 +1,11 @@
-# yeelight
+# Yeelight LAN Controller
 
-LAN Controller for Yeelight
+This application is built using Flutter framework. The application is used for controlling Yeelight devices using LAN connection. If you want to use this application, you need to enable LAN connection. Please read [this link](https://www.yeelight.com/faqs/lan_control). If you're interested in how the protocol works, please download [this document](https://www.yeelight.com/download/Yeelight_Inter-Operation_Spec.pdf).
 
-## Getting Started
+## Acknowledgement
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
-
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+This project will not work without these repo:
+- [yeedart](https://pub.dev/packages/yeedart)
+- [flutter_colorpicker](https://pub.dev/packages/flutter_colorpicker)
+- [fluttertoast](https://pub.dev/packages/fluttertoast)
+- [pull_to_refresh](https://pub.dev/packages/pull_to_refresh)
