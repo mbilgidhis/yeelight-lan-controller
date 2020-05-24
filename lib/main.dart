@@ -12,9 +12,9 @@ class MyApp extends StatelessWidget{
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-        title: 'Yeelight Controller',
-        theme: ThemeData(primaryColor: Colors.blue),
-        home: YeelightDevices()
+      title: 'Yeelight Controller',
+      theme: ThemeData(primaryColor: Colors.blue),
+      home: YeelightDevices()
     );
   }
 }
@@ -22,22 +22,22 @@ class MyApp extends StatelessWidget{
 class YeelightDevices extends StatefulWidget {
   YeelightDevices({Key key}) : super(key: key);
   @override
-  _YeelightDeviceState createState() => new _YeelightDeviceState();
+  YeelightDeviceState createState() => new YeelightDeviceState();
 }
 
-class _YeelightDeviceState extends State<YeelightDevices> {
-  RefreshController _refreshController = RefreshController(initialRefresh: false);
+class YeelightDeviceState extends State<YeelightDevices> {
+  RefreshController refreshController = RefreshController(initialRefresh: false, );
   var devices = new List();
-  final _biggerFont = const TextStyle(fontSize: 22.0);
-  bool _lampState = false;
+  final biggerFont = const TextStyle(fontSize: 22.0);
+  bool lampState = false;
   Color currentColor = Colors.white;
   String deviceModel = 'mono';
   int brightness = 0;
   int colorTemperature = 1700;
   
-  _getDevices() async {
+  getDevices() async {
     devices.clear();
-    Discover._discover().then((responses){
+    Discover.discover().then((responses){
       setState(() {
         devices = responses;
       });
@@ -51,15 +51,15 @@ class _YeelightDeviceState extends State<YeelightDevices> {
   
   void showToast(String string) {
     Fluttertoast.showToast(
-        msg: string,
-        toastLength: Toast.LENGTH_LONG
+      msg: string,
+      toastLength: Toast.LENGTH_LONG
     );
   }
   
   @override
   void initState() {
     super.initState();
-    _getDevices();
+    getDevices();
   }
   
   dispose() {
@@ -69,54 +69,54 @@ class _YeelightDeviceState extends State<YeelightDevices> {
   build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-          title: Text('Yeelight Controller'),
-          actions:<Widget>[
-            IconButton(
-              icon: Icon(Icons.refresh),
-              onPressed: () => setState(() {
-                _onRefresh();
-              }),
-            )
-          ]
+        title: Text('Yeelight Controller'),
+        actions:<Widget>[
+          IconButton(
+            icon: Icon(Icons.refresh),
+            onPressed: () => setState(() {
+              onRefresh();
+            }),
+          )
+        ]
       ),
       body: SmartRefresher(
         enablePullDown: true,
         enablePullUp: false,
-        controller: _refreshController,
-        onRefresh: _onRefresh,
+        controller: refreshController,
+        onRefresh: onRefresh,
         header: MaterialClassicHeader(),
         child: ListView.builder(
-            padding: const EdgeInsets.all(10.0),
-            itemCount: devices.length,
-            itemBuilder: (context, index) {
-              return ListTile(
-                title: Text(
-                  devices[index].address.address.toString() + ' - ' + devices[index].model.toString(),
-                  style: _biggerFont,
-                ),
-                trailing: Icon( Icons.chevron_right ),
-                onTap: () {
-                  _lampState = devices[index].powered;
-                  currentColor = Color(_replaceFF(devices[index].rgb));
-                  brightness = devices[index].brightness;
-                  colorTemperature = devices[index].colorTemperature;
-                  setState(() {
-                    _getInfo(devices[index]);
-                  });
-                },
-              );
-            }
+          padding: const EdgeInsets.all(10.0),
+          itemCount: devices.length,
+          itemBuilder: (context, index) {
+            return ListTile(
+              title: Text(
+                devices[index].address.address.toString() + ' - ' + devices[index].model.toString(),
+                style: biggerFont,
+              ),
+              trailing: Icon( Icons.chevron_right ),
+              onTap: () {
+                lampState = devices[index].powered;
+                currentColor = Color(replaceFF(devices[index].rgb));
+                brightness = devices[index].brightness;
+                colorTemperature = devices[index].colorTemperature;
+                setState(() {
+                  getInfo(devices[index]);
+                });
+              },
+            );
+          }
         ),
       ),
     );
   }
   
-  Future<void> _onRefresh() async{
-    await _getDevices();
-    _refreshController.refreshCompleted();
+  Future<void> onRefresh() async{
+    await getDevices();
+    refreshController.refreshCompleted();
   }
   
-  int _changeToInt(Color color) {
+  int changeToInt(Color color) {
     String colorString = color.toString();
     String valueString = colorString.split('(0x')[1].split(')')[0];
     valueString = valueString.substring(2);
@@ -124,7 +124,7 @@ class _YeelightDeviceState extends State<YeelightDevices> {
     return value;
   }
   
-  int _replaceFF(int color) {
+  int replaceFF(int color) {
     Color colorWith00 = Color(color);
     String colorWithFF = colorWith00.toString().replaceAll('0x00', '0xff');
     String valueString = colorWithFF.split('(0x')[1].split(')')[0];
@@ -132,147 +132,144 @@ class _YeelightDeviceState extends State<YeelightDevices> {
     return value;
   }
   
-  _getInfo(DiscoveryResponse dev) {
+  getInfo(DiscoveryResponse dev) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (BuildContext context){
           return StatefulBuilder(
             builder: (BuildContext context, StateSetter setState) {
               // Always scan for devices;
-              _onRefresh();
-              final _styleHead = TextStyle(
+              onRefresh();
+              final styleHead = TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               );
-              final _styleBody = TextStyle(
+              final styleBody = TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w400,
               );
               
               deviceModel = dev.model;
               
-              Future<Null> _onOffPres() async {
-                _onRefresh();
+              Future<Null> onOffPres() async {
+                onRefresh();
                 final device = Device(
                   address: dev.address,
                   port: dev.port,
                 );
-                var _devState = await device.getProps(id: 1, parameters: ['power'])
+                var devState = await device.getProps(id: 1, parameters: ['power'])
                     .catchError((onError){
                   showToast('Failed to get device information');
                 });
                 
                 // bagian ini kebalikannya
-                
-                if ( await _devState.result[0] == 'on' ) {
+                if ( await devState.result[0] == 'on' ) {
                   await device.turnOff(
-                      duration: Duration(milliseconds: 1000),
-                      effect: Effect.smooth()
-                  )
-                      .catchError((onError){
+                    duration: Duration(milliseconds: 1000),
+                    effect: Effect.smooth()
+                  ).catchError((onError){
                     showToast('Failed to turn off the device.');
-                  })
-                      .whenComplete(() => device.disconnect());
+                  }).whenComplete(() => device.disconnect());
                 } else {
                   await device.turnOn(
-                      duration: Duration(milliseconds: 1000),
-                      effect: Effect.smooth()
-                  )
-                      .catchError((onError){
+                    duration: Duration(milliseconds: 1000),
+                    effect: Effect.smooth()
+                  ).catchError((onError){
                     showToast('Failed to turn on the device.');
-                  })
-                      .whenComplete(() => device.disconnect());
+                  }).whenComplete(() => device.disconnect());
                 }
+                // Set state for button
                 setState(() {
-                  if ( _devState.result[0] == 'on' ) {
-                    _lampState = false;
+                  if ( devState.result[0] == 'on' ) {
+                    lampState = false;
                   } else {
-                    _lampState = true;
+                    lampState = true;
                   }
                 });
               }
               
               Future<Null> changeColor(Color color) async {
-                int convertColor = _changeToInt(currentColor);
+                int convertColor = changeToInt(color);
                 final device = Device(
                   address: dev.address,
                   port: dev.port,
                 );
                 
-                var _devState = await device.getProps(id: 1, parameters: ['power'])
+                var devState = await device.getProps(id: 1, parameters: ['power'])
                     .catchError((onError){
                   showToast('Failed to get device information.');
                 });
-                if ( await _devState.result[0] == 'on' ) {
+                
+                if ( await devState.result[0] == 'on' ){
                   await device.setRGB(
-                      color: convertColor,
-                      effect: Effect.smooth(),
-                      duration: Duration(microseconds: 1000)
+                    color: convertColor,
+                    effect: Effect.smooth(),
+                    duration: Duration(microseconds: 1000)
                   ).catchError((onError){
                     showToast('Failed to set RGB color.');
-                  })
-                      .whenComplete(() => device.disconnect());
+                  }).whenComplete(() => device.disconnect());
+
+                  // Set state for slider
+                  setState(() {
+                    currentColor = color;
+                  });
                 }
-                
-                setState(() {
-                  currentColor = color;
-                });
               }
               
               Future<Null> changeBrightness(double value) async {
-//                                _onRefresh();
+//                                onRefresh();
                 final device = Device(
                   address: dev.address,
                   port: dev.port,
                 );
                 
-                var _devState = await device.getProps(id: 1, parameters: ['power'])
+                var devState = await device.getProps(id: 1, parameters: ['power'])
                     .catchError((onError){
                   showToast('Failed to get device information.');
                 });
                 
-                if ( await _devState.result[0] == 'on' ) {
+                if ( await devState.result[0] == 'on' ) {
                   await device.setBrightness(
                     brightness: value.toInt(),
                     effect: Effect.smooth(),
                     duration: Duration(microseconds: 1000),
-                  ).catchError((onError){
+                  ).catchError((onError) {
                     showToast('Failed to set brightness.');
-                  })
-                      .whenComplete(() => device.disconnect());
+                  }).whenComplete(() => device.disconnect());
+  
+                  // Set State for slider
+                  setState(() {
+                    brightness = value.toInt();
+                  });
                 }
-                
-                setState(() {
-                  brightness = value.toInt();
-                });
               }
               
               Future<Null> changeColorTemperature(double value) async {
-//                                _onRefresh();
+//                                onRefresh();
                 final device = Device(
                   address: dev.address,
                   port: dev.port,
                 );
                 
-                var _devState = await device.getProps(id: 1, parameters: ['power'])
+                var devState = await device.getProps(id: 1, parameters: ['power'])
                     .catchError((onError){
                   showToast('Failed to get device information.');
                 });
                 
-                if ( await _devState.result[0] == 'on' ) {
+                if ( await devState.result[0] == 'on' ) {
                   await device.setColorTemperature(
                     colorTemperature: value.toInt(),
                     effect: Effect.smooth(),
                     duration: Duration(microseconds: 1000),
-                  ).catchError((onError){
+                  ).catchError((onError) {
                     showToast('Failed to set color temperature.');
-                  })
-                      .whenComplete(() => device.disconnect());
+                  }).whenComplete(() => device.disconnect());
+  
+                  // Set state for slider
+                  setState(() {
+                    colorTemperature = value.toInt();
+                  });
                 }
-                
-                setState(() {
-                  colorTemperature = value.toInt();
-                });
               }
               
               Widget containerTable = Container(
@@ -280,14 +277,13 @@ class _YeelightDeviceState extends State<YeelightDevices> {
                 child: Table(
                   children: [
                     TableRow(
-                        
                         children: [
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Container(
                                 padding: const EdgeInsets.only(bottom: 10),
-                                child: Text('Name', style: _styleHead),
+                                child: Text('Name', style: styleHead),
                               )
                             ],
                           ),
@@ -296,7 +292,7 @@ class _YeelightDeviceState extends State<YeelightDevices> {
                             children: [
                               Container(
                                 padding: const EdgeInsets.only(bottom: 10),
-                                child: Text('Value', style: _styleHead),
+                                child: Text('Value', style: styleHead),
                               )
                             ],
                           )
@@ -309,7 +305,7 @@ class _YeelightDeviceState extends State<YeelightDevices> {
                             children: [
                               Container(
                                 padding: const EdgeInsets.only(bottom: 10),
-                                child: Text('ID', style: _styleBody),
+                                child: Text('ID', style: styleBody),
                               )
                             ],
                           ),
@@ -318,7 +314,7 @@ class _YeelightDeviceState extends State<YeelightDevices> {
                             children: [
                               Container(
                                 padding: const EdgeInsets.only(bottom: 10),
-                                child: Text(dev.id.toString(), style: _styleBody),
+                                child: Text(dev.id.toString(), style: styleBody),
                               )
                             ],
                           )
@@ -331,7 +327,7 @@ class _YeelightDeviceState extends State<YeelightDevices> {
                             children: [
                               Container(
                                 padding: const EdgeInsets.only(bottom: 10),
-                                child: Text('Name', style: _styleBody),
+                                child: Text('Name', style: styleBody),
                               )
                             ],
                           ),
@@ -340,7 +336,7 @@ class _YeelightDeviceState extends State<YeelightDevices> {
                             children: [
                               Container(
                                 padding: const EdgeInsets.only(bottom: 10),
-                                child: (dev.name != "") ? Text(utf8.decode( base64.decode(dev.name.toString())), style: _styleBody) : Text(''),
+                                child: (dev.name != "") ? Text(utf8.decode( base64.decode(dev.name.toString())), style: styleBody) : Text(''),
                               )
                             ],
                           )
@@ -353,7 +349,7 @@ class _YeelightDeviceState extends State<YeelightDevices> {
                             children: [
                               Container(
                                 padding: const EdgeInsets.only(bottom: 10),
-                                child: Text('Address', style: _styleBody),
+                                child: Text('Address', style: styleBody),
                               )
                             ],
                           ),
@@ -362,7 +358,7 @@ class _YeelightDeviceState extends State<YeelightDevices> {
                             children: [
                               Container(
                                 padding: const EdgeInsets.only(bottom: 10),
-                                child: Text(dev.address.address.toString(), style: _styleBody),
+                                child: Text(dev.address.address.toString(), style: styleBody),
                               )
                             ],
                           )
@@ -375,7 +371,7 @@ class _YeelightDeviceState extends State<YeelightDevices> {
                             children: [
                               Container(
                                 padding: const EdgeInsets.only(bottom: 10),
-                                child: Text('Port', style: _styleBody),
+                                child: Text('Port', style: styleBody),
                               )
                             ],
                           ),
@@ -384,7 +380,7 @@ class _YeelightDeviceState extends State<YeelightDevices> {
                             children: [
                               Container(
                                 padding: const EdgeInsets.only(bottom: 10),
-                                child: Text(dev.port.toString(), style: _styleBody),
+                                child: Text(dev.port.toString(), style: styleBody),
                               )
                             ],
                           )
@@ -397,7 +393,7 @@ class _YeelightDeviceState extends State<YeelightDevices> {
                             children: [
                               Container(
                                 padding: const EdgeInsets.only(bottom: 10),
-                                child: Text('Model', style: _styleBody),
+                                child: Text('Model', style: styleBody),
                               )
                             ],
                           ),
@@ -406,7 +402,7 @@ class _YeelightDeviceState extends State<YeelightDevices> {
                             children: [
                               Container(
                                 padding: const EdgeInsets.only(bottom: 10),
-                                child: Text(dev.model.toString(), style: _styleBody),
+                                child: Text(dev.model.toString(), style: styleBody),
                               )
                             ],
                           )
@@ -419,7 +415,7 @@ class _YeelightDeviceState extends State<YeelightDevices> {
                             children: [
                               Container(
                                 padding: const EdgeInsets.only(bottom: 10),
-                                child: Text('Firmware Version', style: _styleBody),
+                                child: Text('Firmware Version', style: styleBody),
                               )
                             ],
                           ),
@@ -428,7 +424,7 @@ class _YeelightDeviceState extends State<YeelightDevices> {
                             children: [
                               Container(
                                 padding: const EdgeInsets.only(bottom: 10),
-                                child: Text(dev.firmwareVersion.toString(), style: _styleBody),
+                                child: Text(dev.firmwareVersion.toString(), style: styleBody),
                               )
                             ],
                           )
@@ -443,16 +439,16 @@ class _YeelightDeviceState extends State<YeelightDevices> {
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     RaisedButton(
-                      onPressed: _onOffPres,
-                      child: Text( (_lampState) ? 'ON' : 'OFF', style: TextStyle(fontSize: 20)),
-                      textColor: (_lampState) ? Colors.white : Colors.black54,
-                      color: (_lampState) ? Colors.blue : Colors.grey[400],
+                      onPressed: onOffPres,
+                      child: Text( (lampState) ? 'ON' : 'OFF', style: TextStyle(fontSize: 20)),
+                      textColor: (lampState) ? Colors.white : Colors.black54,
+                      color: (lampState) ? Colors.blue : Colors.grey[400],
                     )
                   ],
                 ),
               );
               
-              Widget _colorPicker = Container(
+              Widget colorPicker = Container(
                 padding: EdgeInsets.all(18),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -494,7 +490,7 @@ class _YeelightDeviceState extends State<YeelightDevices> {
                 ),
               );
               
-              Widget _emptyContainer = Container();
+              Widget emptyContainer = Container();
               
               Widget sliderBrightness = Container(
                 padding: EdgeInsets.only(bottom: 10, top: 5, left: 18, right: 18),
@@ -535,7 +531,7 @@ class _YeelightDeviceState extends State<YeelightDevices> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      Text(label, style: _styleHead),
+                      Text(label, style: styleHead),
                     ],
                   ),
                 );
@@ -549,11 +545,11 @@ class _YeelightDeviceState extends State<YeelightDevices> {
                     children: [
                       containerTable,
                       buttonOnOff,
-                      (deviceModel != 'mono') ? _colorPicker : _emptyContainer,
+                      (deviceModel != 'mono') ? colorPicker : emptyContainer,
                       buildTextContainer('Set Brightness'),
                       sliderBrightness,
-                      (deviceModel != 'mono') ? buildTextContainer('Set Color Temperature') : _emptyContainer,
-                      (deviceModel != 'mono') ? sliderColorTemperature : _emptyContainer,
+                      (deviceModel != 'mono') ? buildTextContainer('Set Color Temperature') : emptyContainer,
+                      (deviceModel != 'mono') ? sliderColorTemperature : emptyContainer,
                     ],
                   )
               );
@@ -566,9 +562,9 @@ class _YeelightDeviceState extends State<YeelightDevices> {
 }
 
 class Discover {
-  static Future<List> _discover() async {
+  static Future<List> discover() async {
     final responses = await Yeelight.discover();
-    print( await responses );
+//    print( await responses );
     return responses;
   }
 }
